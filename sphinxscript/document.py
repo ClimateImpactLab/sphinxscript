@@ -29,7 +29,6 @@ DirectoryIndexFileTemplate = '''
 {line}
 
 .. toctree::
-{indent}:maxdepth: 2
 '''
 
 
@@ -38,7 +37,7 @@ class SourceFile(object):
     TEMPLATE = SourceFileTemplate
     
     @classmethod
-    def create_sourcefile_rst(cls, filepath):
+    def create_doc_rst_from_sourcefile(cls, filepath, target):
         '''
         Fill keyword values in :py:attr:`TEMPLATE`
 
@@ -48,120 +47,90 @@ class SourceFile(object):
         filepath : str
             Path to the script being documented
 
-        Returns
-        -------
-        str
-            Documentation rst page for script found at `filepath`
+        target : str
+            Path to the documentation file to be written
+
 
         '''
 
         p = parsers.Parser
         filename = os.path.basename(filepath)
 
-        return cls.TEMPLATE.format(
+        # Create a .rst-style documentation from cls.TEMPLATE
+        doc = cls.TEMPLATE.format(
             filename = filename,
             line = '-'*max(len(filename), 50),
             header = p.extract_comment_header_from_file(filepath),
-            filepath = os.path.relpath(filepath, '.'))
+            filepath = os.path.relpath(filepath, os.path.dirname(target)).replace('\\', '/'))
+
+        # check to see if target's directory exists
+        if not os.path.isdir(os.path.dirname(target)):
+
+            # if not, create it
+            os.makedirs(os.path.dirname(target))
+
+        # write the documentation for sourcefile to target
+        with open(target, 'w+') as fp:
+            fp.write(doc)
 
 
-class DirectoryIndexFile(object):
-    def __init__(self, path):
-        self.path = os.path.basename(path).replace(os.sep, '/')
+def build_docs(target='..', dest='.'):
+    '''
+    Build docs, mirroring target directory strucuture in dest
 
+    Parameters
+    ----------
+    target : str
+        Path to repo root containing source scripts
 
+    dest : str
+        Path to documentation root
+    '''
+    target = os.path.abspath(target)
+    dest = os.path.abspath(dest)
 
-def document_directory(base_dir, current_dir, output_dir, exclude_dirs, dir_title):
-    
-    #.rst file gen to map the subfolders
-    dirindex_file = os.path.join(output_dir, dir_title + '.rst')
-    if not os.path.isdir(os.path.dirname(dirindex_file)):
-        os.makedirs(os.path.dirname(dirindex_file))
+    sphinxscript_path = os.path.join(dest, os.path.basename(target))
+    if os.path.isdir(sphinxscript_path):
+        shutil.rmtree(sphinxscript_path)
 
-    #actual call to write the .rst files to mirror directory structure
-    with open(dirindex_file, 'w+') as dirindex:
-        path = os.path.basename(current_dir).replace(os.sep, '/')
-        dirindex.write('{}\n'.format(path))
-        dirindex.write('-'*max(40, len(path)) + '\n\n')
-        dirindex.write('.. toctree:: \n')
-        dirindex.write('    :maxdepth: 2\n\n')
+    for dirpath, dirs, files in os.walk(os.path.abspath(os.path.expanduser(target))):
 
-        #recurse your directories, call document_codefile and write a .rst file where needed
-        for path in os.listdir(current_dir):
-            
-            target_file = os.path.join(current_dir, path)
-            rel_path = os.path.splitext(os.path.relpath(target_file, base_dir))[0]
-            
-            #check to see if target file is a file...
-            if os.path.isfile(target_file):
-                try:
-                    document_codefile(base_dir, current_dir, output_dir, dir_title, target_file, rel_path, path)
-                    dirindex.write('    {}\n'.format(rel_path.replace(os.sep, '/')))
-                except ValueError, e:
-                    print('Skipping {}'.format(path))
+        # If ``dirpath`` is inside the docs dir ``dest``, skip
+        reldoc = os.path.relpath(dest, dirpath)
+        if re.search(r'^\.\.([/\\]+\.\.)*$'.format(re.escape(os.sep)), reldoc) or reldoc == os.curdir:
+            continue
 
-            #or a directory
-            elif os.path.isdir(target_file):
+        dirname = os.path.basename(os.path.abspath(dirpath))
+        relpath = os.path.relpath(dirpath, os.path.abspath(os.path.expanduser(target)))
 
-                #if target_file is in list of excluded_directories keep moving
-                if os.path.abspath(target_file) in map(os.path.abspath, exclude_dirs):
+        to_add = []
+        for f in files:
+            try:
+                SourceFile.create_doc_rst_from_sourcefile(
+                    filepath = os.path.join(dirpath, f),
+                    target = os.path.join(sphinxscript_path, relpath, os.path.splitext(f)[0] + '.rst')
+                    )
+                to_add.append(
+                    os.path.join(
+                        os.path.basename(dirpath), 
+                        os.path.splitext(os.path.basename(f))[0]
+                        ))
+
+            except ValueError:
+                pass
+
+        dirspec = os.path.join(sphinxscript_path, relpath, '..', dirname +'.rst')
+        with open(dirspec, 'w+') as ds:
+            ds.write(DirectoryIndexFileTemplate.format(
+                path=dirname,
+                line='-'*max(len(dirname), 50)
+                ))
+
+            for a in to_add:
+                ds.write('    {}\n'.format(a.replace('\\', '/')))
+
+            for d in dirs:
+                if os.path.abspath(os.path.join(dirpath, d)) == os.path.abspath(dest):
                     continue
+                ds.write('    {}\n'.format(os.path.join(os.path.basename(dirpath), d)).replace('\\', '/'))
 
-                #otherwise create new directories and recurse till document_codefile basecase 
-                dirindex.write('    {d}/{d}\n'.format(d=os.path.basename(path).replace(os.sep, '/')))
-                document_directory(base_dir, target_file, os.path.join(output_dir, path), exclude_dirs, path)
-
-
-s = SourceFile.create_sourcefile_rst(os.path.expanduser('~/Dropbox (Rhodium Group)/GCP/MORTALITY/analysis/agegrp_interaction_test.do'))
-print(s)
-
-# def document_codefile(base_dir, target_dir, output_dir, dir_title, target_file, rel_path, path):
-
-
-#     #file path gen for .rst file
-#     doc_path = os.path.join(output_dir, rel_path + '.rst')
-    
-#     #check to see if the directory exists
-#     if not os.path.isdir(os.path.dirname(doc_path)):
-#         #gen directory for .rst
-#         os.makedirs(os.path.dirname(doc_path))
-    
-#     #gen the header and .rst file from the .do filepaths
-#     rst, header = parse_codefile(os.path.join(target_dir, path), doc_path)
-    
-#     #write .rst file with contents from rst output from parse statafile
-#     with open(doc_path, 'w+') as do_doc:
-#         do_doc.write(rst)
-
-
-
-
-
-# def create_code_sphinx(target_dir, output_dir, package_title, author):
-#     ''' Create a sphinx webpage from a .do file directory '''
-
-
-#     target_dir = os.path.abspath(os.path.expanduser(target_dir))
-#     output_dir = os.path.abspath(os.path.expanduser(output_dir))
-
-#     output_target = os.path.join(output_dir, package_title)
-#     if os.path.isdir(output_target):
-#         shutil.rmtree(output_target)
-
-#     document_directory(
-#         base_dir=target_dir, 
-#         target_dir=target_dir, 
-#         output_dir=output_target, 
-#         exclude_dirs=[output_dir],
-#         dir_title=package_title)
-
-
-# def main(target_dir='../', output_dir='.'):
-#     create_code_sphinx(
-#         target_dir=target_dir,
-#         output_dir=output_dir, 
-#         package_title='{{cookiecutter.project_slug}}', 
-#         author='`{{cookiecutter.full_name}} <https://climateimpactlab.slack.com/messages/{{cookiecutter.slack}}/>`_')
-
-# if __name__ == '__main__':
-#     main()

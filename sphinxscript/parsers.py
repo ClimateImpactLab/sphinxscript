@@ -14,7 +14,7 @@ class Parser(object):
 
             'regex': [
                 # Files can end in .r or .rscript
-                '\.r(script)?$'
+                '\.(r|rscript)$'
             ],
 
             # block patterns can be defined with:
@@ -28,8 +28,8 @@ class Parser(object):
             # start-of-line patterns can be defined with:
             'start_patterns': [
 
-                # a start-of-line *
-                (r'(\s*\n)*(?P<comment>([\ \t]*\*+[^\n]*(\n|/Z))+)', r'^\s*\*+')]
+                # a start-of-line #
+                (r'(\s*\n)*(?P<comment>([\ \t]*#[^\n]*(\n|/Z))+)', r'^\s*#+')]
         },
 
         'matlab': {
@@ -84,7 +84,7 @@ class Parser(object):
 
             'regex': [
                 # Files can end in .py, .pyc, .pyb, etc.
-                r'\.py.*$'
+                r'\.py\w*$'
             ],
 
             # block patterns can be defined with: 
@@ -187,10 +187,10 @@ class Parser(object):
 
                 # Find the minimum number of whitespace characters on the left 
                 # of each line
-                min_whitespace = min([len(l) - len(l.lstrip()) for l in comment_lines])
+                min_whitespace = min([len(l) - len(l.lstrip()) for l in comment_lines if len(l) > 0])
 
                 # strip min_whitespace whitespace characters from the left side
-                comment_lines = map(lambda l: l[min_whitespace:], comment_lines)
+                comment_lines = map(lambda l: l if len(l) < min_whitespace else l[min_whitespace:], comment_lines)
                 
                 # join comment lines into a comment block
                 return '\n'.join(comment_lines)
@@ -216,7 +216,7 @@ class Parser(object):
 
         for syntax, defn in cls.PARSERS.items():
             for patt in defn['regex']:
-                if re.search(patt, filepath):
+                if re.search(patt, filepath, re.I):
                     return syntax
         
         raise ValueError('Cannot determine filetype. Extension unknown.')
