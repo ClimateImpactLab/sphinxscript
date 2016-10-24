@@ -9,8 +9,8 @@ Overview
 
 Tool for building restructured text documentation for projects with scripts in many languages
 
-Installation / Usage
---------------------
+Installation
+------------
 
 To install use pip:
 
@@ -21,6 +21,9 @@ Or clone the repo:
 
     $ git clone https://github.com/ClimateImpactLab/sphinxscript.git
     $ python setup.py install
+
+Usage
+-----
 
 Set up your repository using sphinx. Near the top of the `conf.py` configuration 
 file, place the following lines:
@@ -42,6 +45,9 @@ source code.
 
 Using Sphinx-script with ReadTheDocs
 ------------------------------------
+
+Include `sphinxscript` in the file `requirements.txt` in your root project 
+directory. Then follow the usage steps above.
 
 
     
