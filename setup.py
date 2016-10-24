@@ -36,5 +36,5 @@ setup(
     author='Climate Impact Lab',
     install_requires=install_requires,
     dependency_links=dependency_links,
-    author_email=''
+    author_email='delgado.michaelt@gmail.com'
 )
