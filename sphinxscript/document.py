@@ -73,6 +73,9 @@ class SourceFile(object):
         with open(target, 'w+') as fp:
             fp.write(doc)
 
+def _inside_dir(checkdir, target):
+    reldoc = os.path.relpath(target, checkdir)
+    return (re.search(r'^\.\.([/\\]+\.\.)*$'.format(re.escape(os.sep)), reldoc) or reldoc == os.curdir)
 
 def build_docs(target='..', dest='.'):
     '''
@@ -96,8 +99,10 @@ def build_docs(target='..', dest='.'):
     for dirpath, dirs, files in os.walk(os.path.abspath(os.path.expanduser(target))):
 
         # If ``dirpath`` is inside the docs dir ``dest``, skip
-        reldoc = os.path.relpath(dest, dirpath)
-        if re.search(r'^\.\.([/\\]+\.\.)*$'.format(re.escape(os.sep)), reldoc) or reldoc == os.curdir:
+        if _inside_dir(dest, dirpath):
+            continue
+        
+        if '.git' in os.path.abspath(dirpath):
             continue
 
         dirname = os.path.basename(os.path.abspath(dirpath))
