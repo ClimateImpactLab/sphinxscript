@@ -1,7 +1,7 @@
 sphinx-script Script Documentation Module
 =========================================
 
-version number: 0.0.3
+version number: 0.0.4
 author: [Climate Impact Lab](http://impactlab.org)
 
 Overview

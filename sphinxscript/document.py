@@ -134,17 +134,20 @@ def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../buil
         for f in inner_files:
             
             try:
+                # Create name for target script
+                innerscript_name = os.path.splitext(f)[0] + '_' + os.path.splitext(f)[1][1:]
+
                 # Create documentation for script
                 SourceFile.create_doc_rst_from_sourcefile(
                     filepath = os.path.join(current_scripts_dir, f),
-                    target = os.path.join(sphinxscript_path, current_relpath, os.path.splitext(f)[0] + '.rst')
+                    target = os.path.join(sphinxscript_path, current_relpath, innerscript_name + '.rst')
                     )
 
                 # Add relpath to file to dir .rst file queue
                 includes_to_add_to_dir_rst.append(
                     os.path.join(
                         os.path.basename(os.path.normpath(os.path.join(sphinxscript_path, current_relpath))), 
-                        os.path.splitext(os.path.basename(f))[0]
+                        innerscript_name
                         ))
 
             except ValueError:
@@ -159,8 +162,8 @@ def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../buil
 
         # dir_rst_filepath is one directory below current_doc_dirpath, but has 
         # the same name as basename(current_doc_dirpath)
-        dir_rst_filepath = os.path.join(
-            current_doc_dirpath, '..', os.path.basename(current_doc_dirpath) +'.rst')
+        dir_rst_filepath = os.path.normpath(os.path.join(
+            current_doc_dirpath, '..', os.path.basename(current_doc_dirpath) +'.rst'))
 
         # Create file at dir_rst_filepath
         with open(dir_rst_filepath, 'w+') as ds:
