@@ -101,6 +101,9 @@ def build_docs(target='..', dest='.'):
         # If ``dirpath`` is inside the docs dir ``dest``, skip
         if _inside_dir(dest, dirpath):
             continue
+
+        if _inside_dir('../.git', dirpath):
+            continue
         
         if '.git' in os.path.abspath(dirpath):
             continue
@@ -135,6 +138,9 @@ def build_docs(target='..', dest='.'):
                 ds.write('    {}\n'.format(a.replace('\\', '/')))
 
             for d in dirs:
+                if '.git' in os.path.abspath(os.path.join(dirpath, d)):
+                    continue
+
                 if os.path.abspath(os.path.join(dirpath, d)) == os.path.abspath(dest):
                     continue
                 ds.write('    {}\n'.format(os.path.join(os.path.basename(dirpath), d)).replace('\\', '/'))
