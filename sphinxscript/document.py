@@ -74,10 +74,21 @@ class SourceFile(object):
             fp.write(doc)
 
 def _inside_dir(checkdir, target):
-    reldoc = os.path.relpath(target, checkdir)
-    return (re.search(r'^\.\.([/\\]+\.\.)*$'.format(re.escape(os.sep)), reldoc) or reldoc == os.curdir)
+    chk = os.path.normpath(os.path.abspath(checkdir))
+    if chk == os.path.normpath(os.path.abspath(target))[:len(chk)]:
+        return True
 
-def build_docs(target='..', dest='.'):
+    return False
+
+def find_exclude(candidate, excludes):
+    for ex in excludes:
+        if _inside_dir(ex, candidate):
+            return True
+
+    return False
+
+
+def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../build']):
     '''
     Build docs, mirroring target directory strucuture in dest
 
@@ -88,60 +99,88 @@ def build_docs(target='..', dest='.'):
 
     dest : str
         Path to documentation root
-    '''
-    target = os.path.abspath(target)
-    dest = os.path.abspath(dest)
 
-    sphinxscript_path = os.path.join(dest, os.path.basename(target))
+    excludes : list
+        List of subdirectories within target to exclude from docs creation. By 
+        default, ``./.git``, ``./dist``, and ``./build`` are excluded. The 
+        argument ``dest`` is excluded automatically (regardless of user input).
+    '''
+
+    scripts_directory = os.path.normpath(os.path.abspath(os.path.expanduser(target)))
+    dest = os.path.normpath(os.path.abspath(os.path.expanduser(dest)))
+
+    # Add dest to excludes
+    excludes.append(dest)
+
+    # Make excludes absolute and normalized paths
+    excludes = map(os.path.abspath, excludes)
+    excludes = map(os.path.normpath, excludes)
+
+
+    sphinxscript_path = os.path.join(dest, 'sphinxscript')
     if os.path.isdir(sphinxscript_path):
         shutil.rmtree(sphinxscript_path)
 
-    for dirpath, dirs, files in os.walk(os.path.abspath(os.path.expanduser(target))):
+    for current_scripts_dir, inner_dirs, inner_files in os.walk(scripts_directory):
 
-        # If ``dirpath`` is inside the docs dir ``dest``, skip
-        if _inside_dir(dest, dirpath):
+        if find_exclude(current_scripts_dir, excludes):
             continue
 
-        if _inside_dir('../.git', dirpath):
-            continue
-        
-        if '.git' in os.path.abspath(dirpath):
-            continue
+        current_dirname = os.path.basename(current_scripts_dir)
+        current_relpath = os.path.relpath(current_scripts_dir, scripts_directory)
 
-        dirname = os.path.basename(os.path.abspath(dirpath))
-        relpath = os.path.relpath(dirpath, os.path.abspath(os.path.expanduser(target)))
+        includes_to_add_to_dir_rst = []
 
-        to_add = []
-        for f in files:
+        for f in inner_files:
+            
             try:
+                # Create documentation for script
                 SourceFile.create_doc_rst_from_sourcefile(
-                    filepath = os.path.join(dirpath, f),
-                    target = os.path.join(sphinxscript_path, relpath, os.path.splitext(f)[0] + '.rst')
+                    filepath = os.path.join(current_scripts_dir, f),
+                    target = os.path.join(sphinxscript_path, current_relpath, os.path.splitext(f)[0] + '.rst')
                     )
-                to_add.append(
+
+                # Add relpath to file to dir .rst file queue
+                includes_to_add_to_dir_rst.append(
                     os.path.join(
-                        os.path.basename(dirpath), 
+                        os.path.basename(os.path.normpath(os.path.join(sphinxscript_path, current_relpath))), 
                         os.path.splitext(os.path.basename(f))[0]
                         ))
 
             except ValueError:
+
+                # File type not recognized. Skip silently.
                 pass
 
-        dirspec = os.path.join(sphinxscript_path, relpath, '..', dirname +'.rst')
-        with open(dirspec, 'w+') as ds:
+        # Assemble path to dir .rst file
+
+        # dir_rst_dirpath is the path to the folder we are documenting
+        current_doc_dirpath = os.path.normpath(os.path.join(sphinxscript_path, current_relpath))
+
+        # dir_rst_filepath is one directory below current_doc_dirpath, but has 
+        # the same name as basename(current_doc_dirpath)
+        dir_rst_filepath = os.path.join(
+            current_doc_dirpath, '..', os.path.basename(current_doc_dirpath) +'.rst')
+
+        # Create file at dir_rst_filepath
+        with open(dir_rst_filepath, 'w+') as ds:
+
             ds.write(DirectoryIndexFileTemplate.format(
-                path=dirname,
-                line='-'*max(len(dirname), 50)
+                path = current_dirname,
+                line = '-'*max(len(current_dirname), 50)
                 ))
 
-            for a in to_add:
+            for a in includes_to_add_to_dir_rst:
                 ds.write('    {}\n'.format(a.replace('\\', '/')))
 
-            for d in dirs:
-                if '.git' in os.path.abspath(os.path.join(dirpath, d)):
+            for d in inner_dirs:
+                if find_exclude(os.path.join(current_scripts_dir, d), excludes):
                     continue
 
-                if os.path.abspath(os.path.join(dirpath, d)) == os.path.abspath(dest):
-                    continue
-                ds.write('    {}\n'.format(os.path.join(os.path.basename(dirpath), d)).replace('\\', '/'))
+
+                inner_dir_docpath = os.path.join(
+                    os.path.basename(os.path.normpath(os.path.join(sphinxscript_path, current_relpath))), 
+                    d)
+
+                ds.write('    {}\n'.format(inner_dir_docpath.replace('\\', '/')))
 
