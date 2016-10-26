@@ -10,18 +10,7 @@ SourceFileTemplate = '''
 {filename}
 {line}
 
-Header
-~~~~~~
-
-{header}
-
-
-Raw Code
-~~~~~~~~
-
-.. literalinclude:: {filepath}
-    :linenos:
-
+{documentation}
 '''
 
 DirectoryIndexFileTemplate = '''
@@ -37,7 +26,7 @@ class SourceFile(object):
     TEMPLATE = SourceFileTemplate
     
     @classmethod
-    def create_doc_rst_from_sourcefile(cls, filepath, target):
+    def create_doc_rst_from_sourcefile(cls, filepath, target, package):
         '''
         Fill keyword values in :py:attr:`TEMPLATE`
 
@@ -53,15 +42,19 @@ class SourceFile(object):
 
         '''
 
-        p = parsers.Parser
+        parser = parsers.get_parser_from_filename(filepath)
         filename = os.path.basename(filepath)
+
+        documentation = parser.parse(
+            filepath, 
+            relpath=os.path.relpath(filepath, os.path.dirname(target)), 
+            package=package)
 
         # Create a .rst-style documentation from cls.TEMPLATE
         doc = cls.TEMPLATE.format(
             filename = filename,
             line = '-'*max(len(filename), 50),
-            header = p.extract_comment_header_from_file(filepath),
-            filepath = os.path.relpath(filepath, os.path.dirname(target)).replace('\\', '/'))
+            documentation=documentation)
 
         # check to see if target's directory exists
         if not os.path.isdir(os.path.dirname(target)):
@@ -140,7 +133,8 @@ def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../buil
                 # Create documentation for script
                 SourceFile.create_doc_rst_from_sourcefile(
                     filepath = os.path.join(current_scripts_dir, f),
-                    target = os.path.join(sphinxscript_path, current_relpath, innerscript_name + '.rst')
+                    target = os.path.join(sphinxscript_path, current_relpath, innerscript_name + '.rst'),
+                    package = scripts_directory
                     )
 
                 # Add relpath to file to dir .rst file queue
