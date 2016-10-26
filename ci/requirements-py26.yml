@@ -1,0 +1,14 @@
+name: test_env
+dependencies:
+  - python=2.6.9
+  - pytest
+  - ordereddict
+  - openssl
+  # no seaborn
+  - unittest2
+  - pyyaml
+  - pip:
+    - coveralls
+    - pytest-cov
+    - cyordereddict
+    - toolz
