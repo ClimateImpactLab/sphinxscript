@@ -40,10 +40,8 @@ Finally, in your sphinx index file `index.rst`, include the following:
     .. toctree::
        :maxdepth: 4
 
-       [project_folder_name]
+       sphinxscript
 
-replacing `[project_folder_name]` with the name of the directory containing your 
-source code.
 
 
 Using Sphinx-script with ReadTheDocs
