@@ -1,11 +1,9 @@
 sphinx-script Script Documentation Module
 =========================================
 
-![Travis-CI](https://img.shields.io/travis/ClimateImpactLab/sphinxscript/master.svg?style=flat-square "Travis CI")
-
-![PyPi](https://img.shields.io/pypi/sphinxscript.svg?style=flat-square "PyPi")
-
-![Coveralls](https://img.shields.io/coveralls/delgadom/sphinxscript.svg?style=flat-square "Coveralls")
+![Travis-CI](https://img.shields.io/travis/ClimateImpactLab/sphinxscript/master.svg?style=flat-square "Travis CI") 
+![PyPi](https://img.shields.io/pypi/v/sphinxscript.svg?style=flat-square "PyPi") 
+![Coveralls](https://img.shields.io/coveralls/delgadom/sphinxscript.svg?style=flat-square "Coveralls") 
 
 Produced by the [Climate Impact Lab](http://impactlab.org)
 
