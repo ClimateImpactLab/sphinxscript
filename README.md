@@ -38,7 +38,6 @@ file, place the following lines:
 Finally, in your sphinx index file `index.rst`, include the following:
 
     .. toctree::
-       :maxdepth: 4
 
        sphinxscript
 
