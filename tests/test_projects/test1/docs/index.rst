@@ -10,7 +10,7 @@ Contents:
 .. toctree::
    :maxdepth: 4
 
-   test1
+   sphinxscript
 
 Indices and tables
 ==================
