@@ -174,6 +174,8 @@ def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../buil
                 if find_exclude(os.path.join(current_scripts_dir, d), excludes):
                     continue
 
+                with open(os.path.join(current_scripts_dir, d, '__init__.py'), 'w+') as initfile:
+                    initfile.write('')
 
                 inner_dir_docpath = os.path.join(
                     os.path.basename(os.path.normpath(os.path.join(sphinxscript_path, current_relpath))), 
