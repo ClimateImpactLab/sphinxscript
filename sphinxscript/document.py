@@ -116,6 +116,16 @@ def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../buil
 
     for current_scripts_dir, inner_dirs, inner_files in os.walk(scripts_directory):
 
+        # If ``dirpath`` is inside the docs dir ``dest``, skip
+        if _inside_dir(dest, current_scripts_dir):
+            continue
+
+        if _inside_dir('../.git', current_scripts_dir):
+            continue
+        
+        if '.git' in os.path.abspath(current_scripts_dir):
+            continue
+
         if find_exclude(current_scripts_dir, excludes):
             continue
 
@@ -171,6 +181,17 @@ def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../buil
                 ds.write('    {}\n'.format(a.replace('\\', '/')))
 
             for d in inner_dirs:
+
+                # If ``dirpath`` is inside the docs dir ``dest``, skip
+                if _inside_dir(dest, os.path.join(current_scripts_dir, d)):
+                    continue
+
+                if _inside_dir('../.git', os.path.join(current_scripts_dir, d)):
+                    continue
+                
+                if '.git' in os.path.abspath(os.path.join(current_scripts_dir, d)):
+                    continue
+
                 if find_exclude(os.path.join(current_scripts_dir, d), excludes):
                     continue
 
