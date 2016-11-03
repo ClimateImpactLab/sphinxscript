@@ -116,6 +116,9 @@ def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../buil
 
     for current_scripts_dir, inner_dirs, inner_files in os.walk(scripts_directory):
 
+        if current_scripts_dir[0] == '.':
+            continue
+
         # If ``dirpath`` is inside the docs dir ``dest``, skip
         if _inside_dir(dest, current_scripts_dir):
             continue
@@ -135,6 +138,15 @@ def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../buil
         includes_to_add_to_dir_rst = []
 
         for f in inner_files:
+
+            if f[0] == '.':
+                continue
+
+            if f == '__init__.py':
+                continue
+
+            if f.endswith('.pyc'):
+                continue
             
             try:
                 # Create name for target script
@@ -181,6 +193,9 @@ def build_docs(target='..', dest='.', excludes = ['../.git', '../dist', '../buil
                 ds.write('    {}\n'.format(a.replace('\\', '/')))
 
             for d in inner_dirs:
+
+                if d[0] == '.':
+                    continue
 
                 # If ``dirpath`` is inside the docs dir ``dest``, skip
                 if _inside_dir(dest, os.path.join(current_scripts_dir, d)):
